@@ -1,0 +1,1 @@
+<?php // core/Database.php

@@ -1,0 +1,42 @@
+
+```
+
+## API Routes (routes/api.php)
+
+```php
+<?php
+// API routes return JSON responses
+
+$router->group('api', function($router) {
+    
+    // Student API
+    $router->get('students', 'api/StudentApiController@index');
+    $router->get('students/{id}', 'api/StudentApiController@show');
+    $router->post('students', 'api/StudentApiController@create');
+    $router->put('students/{id}', 'api/StudentApiController@update');
+    $router->delete('students/{id}', 'api/StudentApiController@delete');
+    
+    // Enrollment API
+    $router->get('enrollments', 'api/EnrollmentApiController@index');
+    $router->post('enrollments', 'api/EnrollmentApiController@create');
+    $router->get('enrollments/{id}', 'api/EnrollmentApiController@show');
+    
+    // Grades API
+    $router->get('grades/student/{student_id}', 'api/GradeApiController@studentGrades');
+    $router->post('grades', 'api/GradeApiController@create');
+    $router->put('grades/{id}', 'api/GradeApiController@update');
+    
+    // Payment API
+    $router->get('payments/student/{student_id}', 'api/PaymentApiController@studentPayments');
+    $router->post('payments', 'api/PaymentApiController@create');
+    
+    // Schedule API
+    $router->get('schedules/student/{student_id}', 'api/ScheduleApiController@studentSchedule');
+    $router->get('schedules/faculty/{faculty_id}', 'api/ScheduleApiController@facultySchedule');
+    
+    // Authentication API
+    $router->post('auth/login', 'api/AuthApiController@login');
+    $router->post('auth/logout', 'api/AuthApiController@logout');
+    $router->post('auth/refresh', 'api/AuthApiController@refresh');
+    
+})->middleware(['ApiAuthMiddleware']);
