@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SchedPro — School Scheduling System</title>
+<link rel="stylesheet" href="assets/uikit/css/uikit.min.css">
+<style>
+:root{--c1:#4a148c;--c2:#6a1b9a;--bg:#f4f6f9;--card:#fff;--border:#e8e8e8}
+*{box-sizing:border-box}body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;color:#333}
+.sb{width:250px;min-height:100vh;background:var(--card);border-right:1px solid var(--border);position:fixed;top:0;left:0;z-index:980;overflow-y:auto;transition:transform .3s}
+.sb-logo{font-size:1.4rem;font-weight:800;color:var(--c1);letter-spacing:-.5px;padding:24px 24px 4px}.sb-logo b{color:var(--c2)}
+.sb .uk-nav-header{font-size:.65rem!important;text-transform:uppercase;letter-spacing:1.5px;color:#aaa;margin:18px 0 4px;padding:0 24px!important}
+.sb .uk-nav>li>a{display:flex;align-items:center;gap:10px;padding:9px 18px;margin:1px 8px;color:#666;font-size:.84rem;border-radius:8px;text-decoration:none;transition:.15s;cursor:pointer}
+.sb .uk-nav>li>a:hover{background:#f0f2f5;color:var(--c1)}.sb .uk-nav>li.uk-active>a{background:var(--c1);color:#fff!important}
+.sb .uk-nav-sub{padding:2px 0 2px 48px;margin:0}.sb .uk-nav-sub a{font-size:.78rem;padding:5px 12px;color:#888;border-radius:6px;display:block;text-decoration:none;cursor:pointer}
+.sb .uk-nav-sub a:hover,.sb .uk-nav-sub .uk-active a{color:var(--c1);background:rgba(74,20,140,.06)}
+.tb{height:60px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;position:sticky;top:0;z-index:970}
+.av{width:34px;height:34px;border-radius:50%;background:var(--c1);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem}
+.mn{margin-left:250px;min-height:100vh;display:flex;flex-direction:column}
+.mn-inner{flex:1;display:flex;flex-direction:column}
+#content-frame{width:100%;flex:1;border:none;min-height:calc(100vh - 60px)}
+@media(max-width:960px){.sb{transform:translateX(-100%)}.sb.open{transform:translateX(0)}.mn{margin-left:0}}
+</style>
+</head>
+<body>
+<aside class="sb" id="sidebar">
+    <div class="sb-logo">Sched<b>Pro</b></div>
+    <div style="padding:0 24px 16px"><span class="uk-text-meta" style="font-size:.68rem">School Scheduling System</span></div>
+    <ul class="uk-nav uk-nav-default" uk-nav="multiple:true">
+        <li class="uk-nav-header">Scheduling</li>
+        <li id="nav-m1"><a onclick="loadModule('module1.html','nav-m1')"><span uk-icon="icon:file-edit;ratio:.85"></span>Section Creation</a></li>
+        <li id="nav-m2"><a onclick="loadModule('module2.html','nav-m2')"><span uk-icon="icon:table;ratio:.85"></span>Class Timetable</a></li>
+        <li id="nav-m3"><a onclick="loadModule('module3.html','nav-m3')"><span uk-icon="icon:thumbnails;ratio:.85"></span>Room Assignment</a></li>
+        <li id="nav-m4"><a onclick="loadModule('module4.html','nav-m4')"><span uk-icon="icon:user;ratio:.85"></span>Teacher Loading</a></li>
+        <li class="uk-nav-header">System</li>
+        <li id="nav-m5"><a onclick="loadModule('module5.html','nav-m5')"><span uk-icon="icon:warning;ratio:.85"></span>Conflict Detection</a></li>
+        <li id="nav-vt"><a onclick="loadModule('view_classtimetable.html','nav-vt')"><span uk-icon="icon:list;ratio:.85"></span>View All Timetables</a></li>
+    </ul>
+</aside>
+<div class="mn">
+    <div class="tb">
+        <div class="uk-flex uk-flex-middle" style="gap:12px">
+            <a class="uk-hidden@m" uk-icon="icon:menu" style="cursor:pointer" onclick="document.getElementById('sidebar').classList.toggle('open')"></a>
+        </div>
+        <div class="uk-flex uk-flex-middle uk-margin-auto-left" style="gap:14px">
+            <span id="offline-badge" style="display:none;background:#dc2626;color:white;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600">OFFLINE MODE</span>
+            <span class="uk-text-small uk-text-muted uk-visible@m" id="current-date"></span>
+            <span class="av">S</span>
+            <span class="uk-visible@s uk-text-small uk-text-bold">Admin</span>
+        </div>
+    </div>
+    <div class="mn-inner">
+        <iframe id="content-frame" src="module1.html"></iframe>
+    </div>
+</div>
+<script src="assets/uikit/js/uikit.min.js"></script>
+<script src="assets/uikit/js/uikit-icons.min.js"></script>
+<script>
+const d=new Date();
+document.getElementById('current-date').textContent=d.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+window.APP_OFFLINE=false;
+let activeNav='nav-m1';
+function setOfflineMode(o){window.APP_OFFLINE=o;document.getElementById('offline-badge').style.display=o?'inline-block':'none';}
+function loadModule(url,navId){
+    const frame=document.getElementById('content-frame');
+    frame.src=url+(url.includes('?')?'&':'?')+'t='+Date.now();
+    if(activeNav)document.getElementById(activeNav)&&document.getElementById(activeNav).classList.remove('uk-active');
+    if(navId)document.getElementById(navId)&&document.getElementById(navId).classList.add('uk-active');
+    activeNav=navId;
+    try{localStorage.setItem('lastModule',url);localStorage.setItem('lastNav',navId);}catch(e){}
+    document.getElementById('sidebar').classList.remove('open');
+}
+UIkit.notification=(function(orig){return function(opts){if(typeof opts==='string')opts={message:opts};opts=Object.assign({pos:'top-right',timeout:3000},opts);try{UIkit.notification.closeAll();}catch(e){}return orig(opts);};})(UIkit.notification);
+window.onload=function(){
+    const lm=localStorage.getItem('lastModule')||'module1.html';
+    const ln=localStorage.getItem('lastNav')||'nav-m1';
+    loadModule(lm,ln);
+    fetch('check_db.php').then(r=>r.json()).then(o=>setOfflineMode(!o.success)).catch(()=>setOfflineMode(true));
+};
+</script>
+</body>
+</html>

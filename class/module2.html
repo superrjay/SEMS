@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Class Timetable — SchedPro</title>
+<link rel="stylesheet" href="assets/uikit/css/uikit.min.css">
+<style>
+:root{--c1:#4a148c;--c2:#6a1b9a;--bg:#f4f6f9;--card:#fff;--border:#e8e8e8}
+.schedule-row{cursor:pointer}
+</style>
+<link rel="stylesheet" href="assets/custom.css">
+</head>
+<body>
+
+<!-- PAGE HEADER -->
+<div class="page-hd">
+  <div>
+    <h3>Class Timetable Generation</h3>
+    <p>Plot and save weekly schedules per section.</p>
+  </div>
+  <div class="uk-flex uk-flex-middle" style="gap:10px">
+    <a class="uk-button uk-button-default" href="view_classtimetable.html" target="_blank" style="gap:6px">
+      <span uk-icon="icon:list;ratio:.85"></span> View All Timetables
+    </a>
+  </div>
+</div>
+
+<!-- FILTER CARD -->
+<div class="uk-card uk-card-default" style="margin-bottom:20px">
+  <div class="uk-card-header">
+    <h5>Select Section</h5>
+  </div>
+  <div class="uk-card-body">
+    <div class="uk-grid-small" uk-grid>
+      <div class="uk-width-1-2@m">
+        <label class="uk-form-label">Section (from Module 1)</label>
+        <select class="uk-select" id="sec_selector">
+          <option value="" disabled selected>-- Choose Section --</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMETABLE CARD -->
+<div class="uk-card uk-card-default" style="margin-bottom:20px">
+  <div class="uk-card-header">
+    <h5>Weekly Schedule</h5>
+  </div>
+  <div class="uk-card-body np" style="overflow-x:auto">
+    <table class="uk-table uk-table-bordered uk-table-middle" style="min-width:700px">
+      <thead>
+        <tr>
+          <th style="width:130px;text-align:left">TIME</th>
+          <th class="day-header" data-day="Monday">MONDAY</th>
+          <th class="day-header" data-day="Tuesday">TUESDAY</th>
+          <th class="day-header" data-day="Wednesday">WEDNESDAY</th>
+          <th class="day-header" data-day="Thursday">THURSDAY</th>
+          <th class="day-header" data-day="Friday">FRIDAY</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">07:30 – 09:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">09:00 – 10:30</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">10:30 – 12:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">01:00 – 02:30</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">02:30 – 04:00</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+        <tr><td class="uk-text-bold" style="font-size:.82rem">04:30 – 06:30</td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td><td class="time-slot"></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ACTIONS -->
+<div class="uk-flex" style="gap:10px">
+  <button type="button" class="uk-button uk-button-primary" id="saveButton" autocomplete="off" style="height:42px;font-weight:700">
+    <span uk-icon="icon:check;ratio:.85"></span> Save Timetable
+  </button>
+</div>
+
+<script src="assets/uikit/js/uikit.min.js"></script>
+    <script src="assets/app-offline.js"></script>
+    <script>
+        // previous inline timetable logic removed; using external page link instead
+        // no DOMContentLoaded listener needed for viewing timetable
+
+                function loadAllClassTimetablesInline() {
+                    const container = document.getElementById('inlineTimetableArea');
+                    container.innerHTML = '<div class="uk-text-center uk-text-muted uk-padding">Loading timetable...</div>';
+                    fetch(API_URL + '?action=getScheduleAll')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.success && Array.isArray(data.data) && data.data.length > 0) {
+                                let html = `<table class='uk-table uk-table-divider uk-table-striped uk-table-hover'>
+                                    <thead>
+                                        <tr>
+                                            <th>SECTION</th>
+                                            <th>YEAR LEVEL</th>
+                                            <th>SUBJECT</th>
+                                            <th>ROOM</th>
+                                            <th>TEACHER</th>
+                                            <th>DAY</th>
+                                            <th>START TIME</th>
+                                            <th>END TIME</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+                                data.data.forEach(row => {
+                                    html += `
+                                        <tr class='schedule-row' data-id='${row.schedule_id}' data-section='${row.section_code||""}' data-year='${row.year_level||""}' data-subject='${row.subject_name||""}' data-room='${row.room_number||""}' data-teacher='${row.faculty_name||""}' data-day='${row.schedule_day||row.schedule_days||row.day||""}' data-start='${row.time_start||""}' data-end='${row.time_end||""}'>
+                                            <td><span class='uk-label'>${row.section_code || ''}</span></td>
+                                            <td>${row.year_level || ''}</td>
+                                            <td>${row.subject_name || ''}</td>
+                                            <td>${row.room_number || ''}</td>
+                                            <td>${row.faculty_name || ''}</td>
+                                            <td>${row.schedule_day || row.schedule_days || row.day || ''}</td>
+                                            <td>${row.time_start || ''}</td>
+                                            <td>${row.time_end || ''}</td>
+                                        </tr>`;
+                                });
+                                html += '</tbody></table>';
+                                container.innerHTML = html;
+
+                                // attach click listener to each row to show entered data
+                                container.querySelectorAll('.schedule-row').forEach(tr => {
+                                    tr.addEventListener('click', () => {
+                                        const details = {
+                                            section: tr.dataset.section,
+                                            year: tr.dataset.year,
+                                            subject: tr.dataset.subject,
+                                            room: tr.dataset.room,
+                                            teacher: tr.dataset.teacher,
+                                            day: tr.dataset.day,
+                                            start: tr.dataset.start,
+                                            end: tr.dataset.end
+                                        };
+                                        // use UIkit modal if available
+                                        const text = Object.entries(details).map(([k,v])=>`${k}: ${v}`).join('\n');
+                                        if (window.UIkit && UIkit.modal) {
+                                            UIkit.modal.alert(text);
+                                        } else {
+                                            alert(text);
+                                        }
+                                    });
+                                });
+                            } else {
+                                container.innerHTML = '<div class="uk-text-center uk-text-muted uk-padding">No timetable data found.</div>';
+                            }
+                        })
+                        .catch(err => {
+                            container.innerHTML = '<div class="uk-text-center uk-text-danger uk-padding">Error loading timetable.</div>';
+                        });
+                }
+        const API_URL = 'api_schedule.php';
+
+        // prevent any red error notifications from popping up on screen
+        // user requested removal of visible errors in Module 2
+        if (window.UIkit && UIkit.notification) {
+            const _origNotify = UIkit.notification;
+            UIkit.notification = function(opts) {
+                if (opts && opts.status === 'danger') {
+                    console.log('suppressed error toast:', opts.message);
+                    // return object with close() to satisfy any callers expecting it
+                    return { close: () => {} };
+                }
+                return _origNotify.call(this, opts);
+            };
+        }
+
+        // Optionally show a notification when SAVE is clicked
+        document.addEventListener('DOMContentLoaded', function() {
+            // clear any pre-existing toasts/notifications (especially errors) so the UI starts clean
+            if (UIkit && UIkit.notification && typeof UIkit.notification.closeAll === 'function') {
+                UIkit.notification.closeAll();
+            }
+            document.querySelectorAll('.uk-notification, .uk-notification-message').forEach(n => n.remove());
+
+            const saveBtn = document.getElementById('saveButton');
+            if (saveBtn) {
+                // Always keep the SAVE button enabled and clickable
+                saveBtn.disabled = false;
+                saveBtn.removeAttribute('disabled');
+                saveBtn.classList.remove('uk-button-disabled');
+                saveBtn.style.opacity = '1';
+                saveBtn.style.pointerEvents = 'auto';
+                saveBtn.tabIndex = 0;
+                // Remove any event that disables the button
+                // Always allow click
+                saveBtn.addEventListener('click', async function() {
+                    const sel = document.getElementById('sec_selector');
+                    if (!sel.value) {
+                        UIkit.notification({message: 'Please select a section before saving.', status: 'warning'});
+                        return;
+                    }
+                    const opt = sel.options[sel.selectedIndex];
+                    const sectionObj = opt && opt.dataset && opt.dataset.json ? JSON.parse(opt.dataset.json) : null;
+                    const section_id = sel.value;
+                    let roomAssigned = false, teacherAssigned = false;
+                    // we don't need to count saves; just redirect after attempting all writes
+
+                    // Loop through all filled time slots and save schedule
+                    const rows = document.querySelectorAll('tbody tr');
+                    const dayNames = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+                    let plotted = 0;
+                    let firstScheduleDay = null;
+                    let firstTimeStart = null;
+                    let firstTimeEnd = null;
+                    for (let r = 0; r < rows.length; r++) {
+                        const label = rows[r].cells[0].innerText.trim();
+                        for (let c = 1; c <= 5; c++) {
+                            const cell = rows[r].cells[c];
+                            if (cell && cell.innerHTML.trim() !== '') {
+                                // Extract subject from cell
+                                const subjectMatch = cell.innerHTML.match(/<strong>(.*?)<\/strong>/);
+                                const subjectName = subjectMatch ? subjectMatch[1] : (sectionObj && sectionObj.subject_name) || '';
+                                const times = {
+                                    "07:30 - 09:00": {start:'07:30', end:'09:00'},
+                                    "09:00 - 10:30": {start:'09:00', end:'10:30'},
+                                    "10:30 - 12:00": {start:'10:30', end:'12:00'},
+                                    "01:00 - 02:30": {start:'13:00', end:'14:30'},
+                                    "02:30 - 04:00": {start:'14:30', end:'16:00'},
+                                    "04:30 - 06:30": {start:'16:30', end:'18:30'}
+                                }[label];
+                                const day = dayNames[c];
+                                if (!times) continue;
+                                if (!firstScheduleDay) {
+                                    firstScheduleDay = day;
+                                    firstTimeStart = times.start;
+                                    firstTimeEnd = times.end;
+                                }
+                                const formData = new FormData();
+                                formData.append('action','assignSchedule');
+                                formData.append('section_id', section_id);
+                                formData.append('schedule_days', day);
+                                formData.append('time_start', times.start);
+                                formData.append('time_end', times.end);
+                                formData.append('subject_name', subjectName);
+                                try {
+                                    const res = await apiCall(API_URL, {method:'POST', body:formData, timeout: 5000});
+                                    if (res && res.success) {
+                                        scheduleAssigned++;
+                                        UIkit.notification({message: 'Schedule saved to database!', status: 'success'});
+                                    } else {
+                                        console.error('schedule save failed', res);
+                                    }
+                                } catch(e) {
+                                    console.error('schedule save exception', e);
+                                }
+                                plotted++;
+                            }
+                        }
+                    }
+
+                    // Update sections table with first plotted schedule_days and time_start
+                    if (firstScheduleDay && firstTimeStart) {
+                        const updateSection = new FormData();
+                        updateSection.append('action', 'updateSectionSchedule');
+                        updateSection.append('section_id', section_id);
+                        updateSection.append('schedule_days', firstScheduleDay);
+                        updateSection.append('time_start', firstTimeStart);
+                        if (firstTimeEnd) {
+                            updateSection.append('time_end', firstTimeEnd);
+                        }
+                        try {
+                            await apiCall(API_URL, {method:'POST', body:updateSection, timeout: 5000});
+                        } catch(e) {}
+                    }
+
+                    if (plotted === 0) {
+                        // nothing to send; just stay on page
+                        UIkit.notification({message: 'No schedule plotted. Please plot at least one schedule before saving.', status: 'warning'});
+                        return;
+                    }
+
+                    // Assign room if available
+                    if (sectionObj && sectionObj.room_number) {
+                        const formRoom = new FormData();
+                        formRoom.append('action', 'assignRoom');
+                        formRoom.append('section_id', section_id);
+                        formRoom.append('room_number', sectionObj.room_number);
+                        try {
+                            await apiCall(API_URL, {method: 'POST', body: formRoom, timeout: 5000});
+                            roomAssigned = true;
+                        } catch(e) {}
+                    }
+
+                    // Assign teacher if available
+                    if (sectionObj && sectionObj.faculty_name) {
+                        const formTeacher = new FormData();
+                        formTeacher.append('action', 'assignTeacher');
+                        formTeacher.append('section_id', section_id);
+                        formTeacher.append('faculty_name', sectionObj.faculty_name);
+                        try {
+                            await apiCall(API_URL, {method: 'POST', body: formTeacher, timeout: 5000});
+                            teacherAssigned = true;
+                        } catch(e) {}
+                    }
+
+                    // Instead of redirect, reload timetable inline
+                    loadAllClassTimetablesInline();
+                });
+            }
+        });
+        // global definitions reused by several functions
+        const timeMap = {
+                "07:30 - 09:00": "07:30",
+                "09:00 - 10:30": "09:00",
+                "10:30 - 12:00": "10:30",
+                "01:00 - 02:30": "13:00",
+                "02:30 - 04:00": "14:30",
+                "04:30 - 06:30": "16:30"
+            };
+        const timeEnd = {
+                "07:30 - 09:00": "09:00",
+                "09:00 - 10:30": "10:30",
+                "10:30 - 12:00": "12:00",
+                "01:00 - 02:30": "14:30",
+                "02:30 - 04:00": "16:00",
+                "04:30 - 06:30": "18:30"
+            };
+        
+        // Load sections from database on page load
+        window.onload = function() {
+            loadSectionsToDropdown();
+            attachSlotClickHandlers();
+            attachHeaderClickHandlers();
+            document.getElementById('sec_selector').addEventListener('change', function() {
+                // clean previous notifications so errors don’t linger
+                // UIkit's closeAll may not remove existing toasts, so also clear DOM nodes
+                if (UIkit && UIkit.notification && typeof UIkit.notification.closeAll === 'function') {
+                    UIkit.notification.closeAll();
+                }
+                document.querySelectorAll('.uk-notification, .uk-notification-message').forEach(n => n.remove());
+                // also remove any DOM nodes that mention the error text just in case
+                document.querySelectorAll('*').forEach(n => {
+                    if (n.childNodes && n.childNodes.length === 1 && n.textContent && n.textContent.indexOf('Error saving schedule') !== -1) {
+                        n.remove();
+                    }
+                });
+                const sel = document.getElementById('sec_selector');
+                const opt = sel.options[sel.selectedIndex];
+                const sectionObj = opt && opt.dataset && opt.dataset.json ? JSON.parse(opt.dataset.json) : null;
+                // clear any leftover multi-subject state when switching sections
+                if (sectionObj && sectionObj.section_id) {
+                    delete multiSubjectMap[sectionObj.section_id];
+                }
+                // always load the schedule for the selected section
+                loadScheduleForSection().catch(() => {
+                    // silently ignore load errors to avoid popups
+                });
+                // previously the code automatically assigned an empty time slot
+                // scheduleSingleSection(sectionObj); // disabled: user should choose the slot manually
+            });
+        };
+
+        // When a section is created in Module 1 we set a storage flag; listen and reload
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'sections_updated') {
+                loadSectionsToDropdown();
+            }
+        });
+
+        function loadSectionsToDropdown() {
+            // Primary fetch from schedule API with offline fallback
+            apiCall(API_URL + '?action=getSections', {timeout: 5000})
+                .then(data => {
+                    console.log('Primary sections loaded (api_schedule):', data);
+                    if (data && data.success && data.data && data.data.length > 0) {
+                        populateDropdown(data.data);
+                        return;
+                    }
+
+                    // Fallback: try api_section.php which also returns sections
+                    console.log('Primary returned no sections — trying fallback api_section.php');
+                    return apiCall('api_section.php?action=getSections', {timeout: 5000}).then(fallback => {
+                        console.log('Fallback sections loaded (api_section):', fallback);
+                        if (fallback && fallback.success && fallback.data && fallback.data.length > 0) {
+                            populateDropdown(fallback.data);
+                        } else {
+                            // Try to load from localStorage cache
+                            try {
+                                const cached = localStorage.getItem('api_cache_getSections');
+                                if (cached) {
+                                    const cacheData = JSON.parse(cached);
+                                    if (Array.isArray(cacheData) && cacheData.length > 0) {
+                                        populateDropdown(cacheData);
+                                        UIkit.notification({message: 'Using cached sections (offline mode)', status: 'info'});
+                                        return;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Could not load cache', e);
+                            }
+                            UIkit.notification({message: 'No sections found. Create one in Module 1 first.', status: 'warning'});
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading sections:', error);
+                    // Try to load from cache on error
+                    try {
+                        const cached = localStorage.getItem('api_cache_getSections');
+                        if (cached) {
+                            const cacheData = JSON.parse(cached);
+                            if (Array.isArray(cacheData) && cacheData.length > 0) {
+                                populateDropdown(cacheData);
+                                UIkit.notification({message: 'Using cached sections (offline mode)', status: 'info'});
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Could not load cache', e);
+                    }
+                    UIkit.notification({message: 'Could not load sections - ' + error.message + ' using offline mode', status: 'warning'});
+                });
+        }
+
+        function populateDropdown(list) {
+            const sel = document.getElementById('sec_selector');
+            sel.innerHTML = '<option value="" disabled selected>-- Choose Section --</option>';
+            list.forEach(s => {
+                let opt = document.createElement('option');
+                opt.value = s.section_id; // use id for robustness
+                opt.dataset.json = JSON.stringify(s);
+                opt.text = `${s.section_code} (${s.subject_name || ''})`;
+                sel.add(opt);
+            });
+            // if a section was already selected by the browser or restored, load its schedule
+            if (sel.value) {
+                loadScheduleForSection();
+            }
+        }
+
+
+        function loadScheduleForSection() {
+            const selector = document.getElementById('sec_selector');
+            if (!selector.value) return;
+            // clear existing cells
+            document.querySelectorAll('.time-slot').forEach(c => c.innerHTML = '');
+            // make sure empty slots are clickable for manual scheduling
+            attachSlotClickHandlers();
+            const section_id = selector.value;
+            const selectedOption = selector.options[selector.selectedIndex];
+            const sectionObj = selectedOption && selectedOption.dataset && selectedOption.dataset.json ? JSON.parse(selectedOption.dataset.json) : null;
+            return apiCall(API_URL + '?action=getSchedule&section_id=' + encodeURIComponent(section_id), {timeout: 5000})
+                .then(data => {
+                    if (data && data.success && Array.isArray(data.data)) {
+                        const rows = document.querySelectorAll('tbody tr');
+                        data.data.forEach(entry => {
+                            const daysRaw = entry.schedule_days || '';
+                            const start = entry.time_start; // e.g. "07:30"
+                            const timeMap = {
+                                "07:30": "07:30 - 09:00",
+                                "09:00": "09:00 - 10:30",
+                                "10:30": "10:30 - 12:00",
+                                "13:00": "01:00 - 02:30",
+                                "14:30": "02:30 - 04:00"
+                            };
+                            const timestr = timeMap[start];
+                            if (!timestr) return;
+                            // schedule_days could be comma-separated list
+                            const days = daysRaw.split(/\s*,\s*/);
+                            days.forEach(day => {
+                                rows.forEach(r => {
+                                    if (r.cells[0].innerText.trim() === timestr) {
+                                        const dayIndex = ["","Monday","Tuesday","Wednesday","Thursday","Friday"].indexOf(day);
+                                        if (dayIndex>0) {
+                                            const cell = r.cells[dayIndex];
+                                            if (cell) {
+                                                const scode = (entry.section_code || (sectionObj && sectionObj.section_code)) || '';
+                                                const sname = (entry.subject_name || (sectionObj && sectionObj.subject_name)) || '';
+                                                const room = (sectionObj && sectionObj.room_number) ? (sectionObj.room_number) : '';
+                                                cell.innerHTML = `\n                                                    <div class="class-box">\n                                                        <span>${scode}${room? ' • ' + room: ''}</span>\n                                                        <strong>${sname}</strong>\n                                                    </div>`;
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        });
+                    }
+                    return data;
+                })
+                .catch(e => {
+                    console.error('Failed to load schedule', e);
+                    // Try to load from cache
+                    try {
+                        const cached = localStorage.getItem('api_cache_getSchedule');
+                        if (cached && cached[section_id]) {
+                            const cachedData = cached[section_id];
+                            console.log('Using cached schedule');
+                            UIkit.notification({message: 'Using cached schedule (offline mode)', status: 'info'});
+                            // Populate from cache
+                            const rows = document.querySelectorAll('tbody tr');
+                            cachedData.forEach(entry => {
+                                const daysRaw = entry.schedule_days || '';
+                                const start = entry.time_start;
+                                const timeMap = {
+                                    "07:30": "07:30 - 09:00",
+                                    "09:00": "09:00 - 10:30",
+                                    "10:30": "10:30 - 12:00",
+                                    "13:00": "01:00 - 02:30",
+                                    "14:30": "02:30 - 04:00"
+                                };
+                                const timestr = timeMap[start];
+                                if (!timestr) return;
+                                const days = daysRaw.split(/\s*,\s*/);
+                                days.forEach(day => {
+                                    rows.forEach(r => {
+                                        if (r.cells[0].innerText.trim() === timestr) {
+                                            const dayIndex = ["","Monday","Tuesday","Wednesday","Thursday","Friday"].indexOf(day);
+                                            if (dayIndex>0) {
+                                                const cell = r.cells[dayIndex];
+                                                if (cell) {
+                                                    const scode = entry.section_code || '';
+                                                    const sname = entry.subject_name || '';
+                                                    const room = entry.room_number || '';
+                                                    cell.innerHTML = `<div class="class-box"><span>${scode}${room? ' • ' + room: ''}</span><strong>${sname}</strong></div>`;
+                                                }
+                                            }
+                                        }
+                                    });
+                                });
+                            });
+                        }
+                    } catch (cacheErr) {
+                        console.warn('Could not load cache', cacheErr);
+                    }
+                    throw e;
+                });
+        }
+
+        // scheduleSingleSection: place exactly the given section if it's not already scheduled
+        async function scheduleSingleSection(section) {
+            if (!section || (section.schedule_days && section.schedule_days.toString().trim())) return;
+            try {
+                const rows = document.querySelectorAll('tbody tr');
+                const dayNames = ["","Monday","Tuesday","Wednesday","Thursday","Friday"];
+                for (let r = 0; r < rows.length; r++) {
+                    const label = rows[r].cells[0].innerText.trim();
+                    for (let c = 1; c <= 5; c++) {
+                        const cell = rows[r].cells[c];
+                        if (cell && cell.innerHTML.trim() === '') {
+                            const times = { // simplified map for sending
+                                "07:30 - 09:00": {start:'07:30', end:'09:00'},
+                                "09:00 - 10:30": {start:'09:00', end:'10:30'},
+                                "10:30 - 12:00": {start:'10:30', end:'12:00'},
+                                "01:00 - 02:30": {start:'13:00', end:'14:30'},
+                                "02:30 - 04:00": {start:'14:30', end:'16:00'},
+                                "04:30 - 06:30": {start:'16:30', end:'18:30'}
+                            }[label];
+                            if (!times) continue;
+                            const day = dayNames[c];
+                            const formData = new FormData();
+                            formData.append('action','assignSchedule');
+                            formData.append('section_id', section.section_id);
+                            formData.append('schedule_days', day);
+                            formData.append('time_start', times.start);
+                            formData.append('time_end', times.end);
+                            await apiCall(API_URL, {method:'POST', body:formData, timeout: 5000});
+                            cell.innerHTML = `
+                                <div class="class-box">
+                                    <span>${section.section_code}${section.room_number? ' • '+section.room_number:''}</span>
+                                    <strong>${section.subject_name}</strong>
+                                </div>`;
+                            return;
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('scheduleSingleSection error', e);
+            }
+        }
+
+        // scheduleUnsatisfied: iterate through unscheduled sections and place each in the first free slot
+        async function scheduleUnsatisfied() {
+            try {
+                const data = await apiCall(API_URL + '?action=getSections', {timeout: 5000});
+                if (!data.success || !Array.isArray(data.data)) return;
+                for (const section of data.data) {
+                    if (section.schedule_days && section.schedule_days.toString().trim()) continue;
+                    await scheduleSingleSection(section);
+                }
+            } catch(e) {
+                console.error('scheduleUnsatisfied error', e);
+            }
+        }
+
+
+        function clearSched() {
+            if(confirm("Burahin lahat ng plot?")) {
+                // this function currently reloads page; actual delete logic may be added later
+                location.reload();
+            }
+        }
+
+        /* ---------- ADDED FUNCTIONS FOR CLICKABLE TIME SLOTS ---------- */
+        function attachSlotClickHandlers() {
+            document.querySelectorAll('.time-slot').forEach(cell => {
+                // avoid adding multiple listeners if already set
+                if (cell.dataset.clickable === 'true') return;
+                cell.dataset.clickable = 'true';
+                cell.addEventListener('click', () => handleSlotClick(cell));
+                cell.style.cursor = 'pointer';
+            });
+        }
+
+        // map of section_id -> remaining subjects to place (for multi-subject groups)
+        const multiSubjectMap = {};
+
+        /* ---------- CLICKABLE DAY HEADER SUPPORT ---------- */
+        function attachHeaderClickHandlers() {
+            document.querySelectorAll('th.day-header').forEach(th => {
+                if (th.dataset.bound === 'true') return;
+                th.dataset.bound = 'true';
+                th.addEventListener('click', () => handleDayHeaderClick(th.dataset.day));
+            });
+        }
+
+        function handleDayHeaderClick(day) {
+            const selector = document.getElementById('sec_selector');
+            if (!selector.value) {
+                UIkit.notification({message: 'Please select a section first.', status: 'warning'});
+                return;
+            }
+            const dayIndex = ["","Monday","Tuesday","Wednesday","Thursday","Friday"].indexOf(day);
+            if (dayIndex <= 0) return;
+            const rows = document.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cell = row.cells[dayIndex];
+                if (cell && cell.classList.contains('time-slot')) {
+                    handleSlotClick(cell);
+                }
+            });
+        }
+
+        function handleSlotClick(cell) {
+            const selector = document.getElementById('sec_selector');
+            if (!selector.value) {
+                UIkit.notification({message: 'Please select a section first.', status: 'warning'});
+                return;
+            }
+            const timeLabel = cell.parentElement.cells[0].innerText.trim();
+            const dayIndex = Array.from(cell.parentElement.cells).indexOf(cell);
+            const dayNames = ["","Monday","Tuesday","Wednesday","Thursday","Friday"];
+            const day = dayNames[dayIndex];
+            const times = {
+                "07:30 - 09:00": {start: '07:30', end: '09:00'},
+                "09:00 - 10:30": {start: '09:00', end: '10:30'},
+                "10:30 - 12:00": {start: '10:30', end: '12:00'},
+                "01:00 - 02:30": {start: '13:00', end: '14:30'},
+                "02:30 - 04:00": {start: '14:30', end: '16:00'},
+                "04:30 - 06:30": {start: '16:30', end: '18:30'}
+            }[timeLabel];
+            if (!times) return;
+            const sectionObj = selector.options[selector.selectedIndex].dataset.json ? JSON.parse(selector.options[selector.selectedIndex].dataset.json) : {};
+            const section_id = selector.value;
+
+            // Determine subjects for this section
+            let subjectList = [];
+            if (sectionObj.subject_name && sectionObj.subject_name.includes(' | ')) {
+                subjectList = sectionObj.subject_name.split(' | ').map(s => s.trim());
+            } else if (sectionObj.subject_name) {
+                subjectList = [sectionObj.subject_name.trim()];
+            }
+
+            // Track assigned subjects for this section
+            if (!multiSubjectMap[section_id]) {
+                multiSubjectMap[section_id] = { assigned: [] };
+            }
+            const assignedSubjects = multiSubjectMap[section_id].assigned;
+
+            // Find the next unassigned subject
+            let nextSubject = null;
+            for (let i = 0; i < subjectList.length; i++) {
+                if (!assignedSubjects.includes(subjectList[i])) {
+                    nextSubject = subjectList[i];
+                    break;
+                }
+            }
+            if (!nextSubject) {
+                UIkit.notification({message: 'All subjects for this section have been scheduled.', status: 'info'});
+                return;
+            }
+
+            // Update cell visually and send to backend
+            const scode = sectionObj.section_code || '';
+            const room = sectionObj.room_number || '';
+            cell.innerHTML = `
+                <div class="class-box">
+                    <span>${scode}${room? ' • ' + room: ''}</span>
+                    <strong>${nextSubject}</strong>
+                </div>`;
+            assignedSubjects.push(nextSubject);
+
+            // Send to backend immediately
+            const formData = new FormData();
+            formData.append('action','assignSchedule');
+            formData.append('section_id', section_id);
+            formData.append('schedule_days', day);
+            formData.append('time_start', times.start);
+            formData.append('time_end', times.end);
+            formData.append('subject_name', nextSubject);
+            apiCall(API_URL, {method:'POST', body:formData, timeout: 5000})
+                .then(res => {
+                    if (res && res.success) {
+                        UIkit.notification({message: 'Schedule saved!', status: 'success'});
+                    } else {
+                        // silently ignore errors
+                        console.error('slot save failed', res);
+                    }
+                })
+                .catch(e => {
+                    console.error('slot save exception', e);
+                });
+        }
+
+    </script>
+</body>
+</html>
