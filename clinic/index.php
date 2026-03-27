@@ -1,1 +1,0 @@
-<?php header("Location: /clinic/login.php"); exit;
